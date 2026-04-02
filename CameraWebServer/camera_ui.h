@@ -89,6 +89,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.15);
       min-height: 320px;
+      height: 320px;
       background: #0a0e12;
       display: grid;
       place-items: center;
@@ -114,9 +115,11 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     .controls {
       margin-top: 12px;
       display: grid;
-      grid-template-columns: 1fr auto;
+      width: 100%;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      gap: 10px;
+      column-gap: 12px;
+      row-gap: 8px;
     }
 
     .capture-row {
@@ -124,6 +127,59 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       align-items: center;
       gap: 10px;
       justify-content: center;
+      justify-self: center;
+    }
+
+    .control-left {
+      justify-self: start;
+    }
+
+    .control-right {
+      justify-self: end;
+    }
+
+    .lastshot-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .lastshot-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .lastshot-empty {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .download-chip {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.58);
+      color: #eaffff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
     }
 
     .touch-btn {
@@ -133,11 +189,23 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       font-weight: 600;
     }
 
+    .startstop-btn {
+      width: 70px;
+      height: 70px;
+      min-width: 70px;
+      min-height: 70px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1;
+    }
+
     .row {
       display: flex;
       gap: 8px;
       align-items: center;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     button {
@@ -198,6 +266,20 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     .field {
       display: grid;
       gap: 5px;
+    }
+
+    .line-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-btn {
+      min-height: 28px;
+      min-width: 58px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 8px;
     }
 
     .line {
@@ -289,7 +371,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
 
     .mode-toggle {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -310,8 +392,8 @@ static const char CAMERA_APP_HTML[] = R"HTML(
 
     .joystick-well {
       position: relative;
-      width: clamp(170px, 18vw, 210px);
-      height: clamp(170px, 18vw, 210px);
+      width: min(100%, clamp(210px, 22vw, 270px));
+      aspect-ratio: 1 / 1;
       border-radius: 22px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background:
@@ -380,14 +462,14 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     }
 
     .joystick-input-vertical {
-      width: 154px;
-      height: 154px;
+      width: 72%;
+      height: 72%;
       transform: rotate(-90deg);
     }
 
     .joystick-input-horizontal {
-      width: 154px;
-      height: 154px;
+      width: 72%;
+      height: 72%;
     }
 
     .stick-dot {
@@ -466,8 +548,8 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         padding: 10px;
       }
       .controls {
-        grid-template-columns: 1fr;
-        justify-items: center;
+        grid-template-columns: 1fr auto 1fr;
+        width: 100%;
         gap: 8px;
       }
       .row { justify-content: center; }
@@ -494,7 +576,23 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         font-size: 18px;
       }
       #saveBtn {
-        min-width: 120px;
+        min-width: unset;
+      }
+      .lastshot-btn {
+        width: 52px;
+        height: 52px;
+      }
+      .startstop-btn {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        min-height: 52px;
+        font-size: 11px;
+      }
+      .download-chip {
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
       }
       #snapshot {
         display: none;
@@ -503,8 +601,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .joystick-well {
-        width: clamp(145px, 41vw, 180px);
-        height: clamp(145px, 41vw, 180px);
+        width: min(100%, clamp(145px, 41vw, 180px));
       }
       .joystick-input-vertical,
       .joystick-input-horizontal {
@@ -588,7 +685,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       }
       .camera .row {
         gap: 6px;
-        justify-content: center;
+        justify-content: flex-start;
       }
       .camera .row .touch-btn {
         min-width: 78px;
@@ -620,6 +717,25 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         gap: 6px;
       }
     }
+
+    @media (min-width: 901px) and (max-width: 1100px) {
+      .joystick-well {
+        width: min(100%, clamp(210px, 30vw, 300px));
+      }
+      .joystick-input-vertical,
+      .joystick-input-horizontal {
+        width: 74%;
+        height: 74%;
+      }
+      .stick-dot {
+        width: 66px;
+        height: 66px;
+      }
+      .stick-dot::after {
+        width: 22px;
+        height: 22px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -634,15 +750,18 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         <div id="hint" class="hint">Tap Start Live</div>
       </div>
       <div class="controls">
-        <div class="row">
-          <button id="startBtn" class="primary touch-btn" type="button">Start Live</button>
-          <button id="stopBtn" class="danger touch-btn" type="button">Stop</button>
-          <button id="saveBtn" class="touch-btn" type="button">Download Last</button>
+        <div class="row control-left">
+          <button id="startStopBtn" class="primary startstop-btn" type="button">Start</button>
         </div>
         <div class="capture-row">
           <button id="snapBtn" class="shutter" type="button" aria-label="Capture"></button>
           <button id="flashToggle" class="icon-btn" type="button" title="Flash Off" aria-label="Flash Off"><span aria-hidden="true">&#128161;</span></button>
         </div>
+        <button id="lastShotBtn" class="lastshot-btn control-right" type="button" title="Download last capture" aria-label="Download last capture">
+          <span id="lastShotEmpty" class="lastshot-empty">Last</span>
+          <img id="lastShotImg" alt="Last capture" style="display:none;">
+          <span class="download-chip" aria-hidden="true">&#8681;</span>
+        </button>
       </div>
     </section>
 
@@ -653,7 +772,8 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         <div class="drive-mode">
           <div class="line"><span>Control Mode</span><span id="driveModeOut">Merged (2 controls)</span></div>
           <div class="mode-toggle">
-            <button id="modeMerged" class="active touch-btn" type="button">Merged</button>
+            <button id="modeMerged" class="active touch-btn" type="button">Car</button>
+            <button id="modeTank" class="touch-btn" type="button">Tank</button>
             <button id="modeIndependent" class="touch-btn" type="button">4 Wheels</button>
           </div>
         </div>
@@ -696,6 +816,25 @@ static const char CAMERA_APP_HTML[] = R"HTML(
           </div>
         </div>
 
+        <div id="tankControl" class="merged-grid hidden">
+          <div class="motor-card">
+            <div class="line"><span>Left Track</span><span id="tankLeftOut">0</span></div>
+            <div class="joystick-well">
+              <input id="tankLeft" class="joystick-input joystick-input-vertical" type="range" min="-100" max="100" step="1" value="0">
+              <div class="joystick-guide-v"></div>
+              <div id="tankLeftStick" class="stick-dot"></div>
+            </div>
+          </div>
+          <div class="motor-card">
+            <div class="line"><span>Right Track</span><span id="tankRightOut">0</span></div>
+            <div class="joystick-well">
+              <input id="tankRight" class="joystick-input joystick-input-vertical" type="range" min="-100" max="100" step="1" value="0">
+              <div class="joystick-guide-v"></div>
+              <div id="tankRightStick" class="stick-dot"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="line"><span>Computed Wheels</span><span id="wheelPreview">FL 0 | FR 0 | RL 0 | RR 0</span></div>
 
         <div class="motor-actions">
@@ -711,6 +850,17 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       <details class="settings-collapse" id="cameraSettings">
         <summary>Camera Settings</summary>
         <div class="settings-body">
+          <div class="field">
+            <div class="line">
+              <span>Stream Height</span>
+              <div class="line-actions">
+                <span id="previewHeightOut">320px</span>
+                <button id="previewHeightReset" class="mini-btn" type="button">Reset</button>
+              </div>
+            </div>
+            <input id="preview_height" type="range" min="200" max="700" step="10" value="320">
+          </div>
+
           <div class="field">
             <div class="line"><span>Resolution</span><span id="resVal">-</span></div>
             <select id="framesize">
@@ -773,7 +923,10 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     const hintEl = document.getElementById('hint');
     const streamEl = document.getElementById('stream');
     const snapshotEl = document.getElementById('snapshot');
-    const saveBtn = document.getElementById('saveBtn');
+    const lastShotBtn = document.getElementById('lastShotBtn');
+    const lastShotImg = document.getElementById('lastShotImg');
+    const lastShotEmpty = document.getElementById('lastShotEmpty');
+    const startStopBtn = document.getElementById('startStopBtn');
     let isStreaming = false;
     let lastBlobUrl = '';
     let motorSeq = 0;
@@ -784,6 +937,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     let mergedDragActive = false;
 
     const fields = {
+      preview_height: document.getElementById('preview_height'),
       framesize: document.getElementById('framesize'),
       quality: document.getElementById('quality'),
       brightness: document.getElementById('brightness'),
@@ -810,6 +964,11 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       steering: document.getElementById('steering')
     };
 
+    const tank = {
+      left: document.getElementById('tankLeft'),
+      right: document.getElementById('tankRight')
+    };
+
     const motorOut = {
       fl: document.getElementById('flOut'),
       fr: document.getElementById('frOut'),
@@ -822,17 +981,28 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       steering: document.getElementById('steeringOut')
     };
 
+    const tankOut = {
+      left: document.getElementById('tankLeftOut'),
+      right: document.getElementById('tankRightOut')
+    };
+
     const stickVisual = {
       throttle: document.getElementById('throttleStick'),
-      steering: document.getElementById('steeringStick')
+      steering: document.getElementById('steeringStick'),
+      tankLeft: document.getElementById('tankLeftStick'),
+      tankRight: document.getElementById('tankRightStick')
     };
 
     const flashToggleBtn = document.getElementById('flashToggle');
     const driveModeOut = document.getElementById('driveModeOut');
     const wheelPreview = document.getElementById('wheelPreview');
     const cameraSettingsEl = document.getElementById('cameraSettings');
+    const previewHeightResetBtn = document.getElementById('previewHeightReset');
+
+    const DEFAULT_PREVIEW_HEIGHT = 320;
 
     const out = {
+      preview_height: document.getElementById('previewHeightOut'),
       framesize: document.getElementById('resVal'),
       quality: document.getElementById('qualityOut'),
       brightness: document.getElementById('brightnessOut'),
@@ -849,11 +1019,32 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       await fetch(`/control?var=${encodeURIComponent(name)}&val=${encodeURIComponent(value)}`);
     }
 
+    function applyPreviewHeight(pxValue) {
+      const clamped = clamp(Number(pxValue), 200, 700);
+      const px = `${clamped}px`;
+      const preview = document.querySelector('.preview');
+      preview.style.height = px;
+      preview.style.minHeight = px;
+      preview.style.maxHeight = px;
+      out.preview_height.textContent = px;
+    }
+
     function clamp(v, min, max) {
       return Math.max(min, Math.min(max, v));
     }
 
     function computeWheelValues() {
+      if (driveMode === 'tank') {
+        const left = Number(tank.left.value);
+        const right = Number(tank.right.value);
+        return {
+          fl: clamp(left, -100, 100),
+          fr: clamp(right, -100, 100),
+          rl: clamp(left, -100, 100),
+          rr: clamp(right, -100, 100)
+        };
+      }
+
       if (driveMode === 'independent') {
         return {
           fl: Number(motors.fl.value),
@@ -906,14 +1097,21 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       out.contrast.textContent = fields.contrast.value;
       out.saturation.textContent = fields.saturation.value;
       out.led_intensity.textContent = fields.led_intensity.value;
+      out.preview_height.textContent = `${fields.preview_height.value}px`;
 
       mergedOut.throttle.textContent = merged.throttle.value;
       mergedOut.steering.textContent = merged.steering.value;
+      tankOut.left.textContent = tank.left.value;
+      tankOut.right.textContent = tank.right.value;
 
       const throttleOffset = Math.round((Number(merged.throttle.value) / 100) * 46);
       const steeringOffset = Math.round((Number(merged.steering.value) / 100) * 46);
+      const tankLeftOffset = Math.round((Number(tank.left.value) / 100) * 46);
+      const tankRightOffset = Math.round((Number(tank.right.value) / 100) * 46);
       stickVisual.throttle.style.transform = `translate3d(0, ${-throttleOffset}px, 0)`;
       stickVisual.steering.style.transform = `translate3d(${steeringOffset}px, 0, 0)`;
+      stickVisual.tankLeft.style.transform = `translate3d(0, ${-tankLeftOffset}px, 0)`;
+      stickVisual.tankRight.style.transform = `translate3d(0, ${-tankRightOffset}px, 0)`;
 
       motorOut.fl.textContent = String(wheels.fl);
       motorOut.fr.textContent = String(wheels.fr);
@@ -929,16 +1127,30 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     }
 
     function recenterMergedSliders() {
-      if (driveMode !== 'merged') return;
+      if (driveMode !== 'merged' && driveMode !== 'tank') return;
 
       let changed = false;
-      if (merged.throttle.value !== '0') {
-        merged.throttle.value = '0';
-        changed = true;
+
+      if (driveMode === 'merged') {
+        if (merged.throttle.value !== '0') {
+          merged.throttle.value = '0';
+          changed = true;
+        }
+        if (merged.steering.value !== '0') {
+          merged.steering.value = '0';
+          changed = true;
+        }
       }
-      if (merged.steering.value !== '0') {
-        merged.steering.value = '0';
-        changed = true;
+
+      if (driveMode === 'tank') {
+        if (tank.left.value !== '0') {
+          tank.left.value = '0';
+          changed = true;
+        }
+        if (tank.right.value !== '0') {
+          tank.right.value = '0';
+          changed = true;
+        }
       }
 
       if (changed) {
@@ -951,6 +1163,7 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       try {
         const status = await fetch('/status').then((r) => r.json());
         for (const key of Object.keys(fields)) {
+          if (key === 'preview_height') continue;
           const el = fields[key];
           if (!(key in status)) continue;
           if (el.type === 'checkbox') {
@@ -974,6 +1187,9 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       isStreaming = active;
       stateEl.textContent = active ? 'Live' : 'Ready';
       hintEl.style.display = active ? 'none' : 'block';
+      startStopBtn.textContent = active ? 'Stop' : 'Start';
+      startStopBtn.classList.toggle('danger', active);
+      startStopBtn.classList.toggle('primary', !active);
     }
 
     function getStreamUrl() {
@@ -1018,6 +1234,9 @@ static const char CAMERA_APP_HTML[] = R"HTML(
         if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
         lastBlobUrl = URL.createObjectURL(blob);
         snapshotEl.innerHTML = `<img src="${lastBlobUrl}" alt="Snapshot">`;
+        lastShotImg.src = lastBlobUrl;
+        lastShotImg.style.display = 'block';
+        lastShotEmpty.style.display = 'none';
       } catch (_err) {
         snapshotEl.textContent = 'Capture failed';
       }
@@ -1031,10 +1250,15 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       a.click();
     }
 
-    document.getElementById('startBtn').addEventListener('click', startStream);
-    document.getElementById('stopBtn').addEventListener('click', stopStream);
+    startStopBtn.addEventListener('click', () => {
+      if (isStreaming) {
+        stopStream();
+      } else {
+        startStream();
+      }
+    });
     document.getElementById('snapBtn').addEventListener('click', snap);
-    saveBtn.addEventListener('click', downloadLast);
+    lastShotBtn.addEventListener('click', downloadLast);
 
     flashToggleBtn.addEventListener('click', () => {
       if (!hasFlash) return;
@@ -1047,15 +1271,24 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     function setDriveMode(mode) {
       driveMode = mode;
       document.getElementById('modeMerged').classList.toggle('active', mode === 'merged');
+      document.getElementById('modeTank').classList.toggle('active', mode === 'tank');
       document.getElementById('modeIndependent').classList.toggle('active', mode === 'independent');
       document.getElementById('mergedControl').classList.toggle('hidden', mode !== 'merged');
+      document.getElementById('tankControl').classList.toggle('hidden', mode !== 'tank');
       document.getElementById('independentControl').classList.toggle('hidden', mode !== 'independent');
-      driveModeOut.textContent = mode === 'merged' ? 'Merged (2 controls)' : 'Independent (4 wheels)';
+      if (mode === 'merged') {
+        driveModeOut.textContent = 'Merged (2 controls)';
+      } else if (mode === 'tank') {
+        driveModeOut.textContent = 'Tank (left/right tracks)';
+      } else {
+        driveModeOut.textContent = 'Independent (4 wheels)';
+      }
       motorDirty = true;
       updateReadouts();
     }
 
     document.getElementById('modeMerged').addEventListener('click', () => setDriveMode('merged'));
+    document.getElementById('modeTank').addEventListener('click', () => setDriveMode('tank'));
     document.getElementById('modeIndependent').addEventListener('click', () => setDriveMode('independent'));
     cameraSettingsEl.addEventListener('toggle', updateMobileScrollLock);
     window.addEventListener('resize', updateMobileScrollLock);
@@ -1070,6 +1303,8 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       });
       merged.throttle.value = '0';
       merged.steering.value = '0';
+      tank.left.value = '0';
+      tank.right.value = '0';
       updateReadouts();
       sendMotors().catch(() => {});
     });
@@ -1077,6 +1312,9 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     document.getElementById('motorReverse').addEventListener('click', () => {
       if (driveMode === 'merged') {
         merged.throttle.value = String(-Number(merged.throttle.value));
+      } else if (driveMode === 'tank') {
+        tank.left.value = String(-Number(tank.left.value));
+        tank.right.value = String(-Number(tank.right.value));
       } else {
         Object.values(motors).forEach((el) => {
           el.value = String(-Number(el.value));
@@ -1092,6 +1330,8 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       });
       merged.throttle.value = '0';
       merged.steering.value = '0';
+      tank.left.value = '0';
+      tank.right.value = '0';
       updateReadouts();
       stopMotors().catch(() => {});
     });
@@ -1100,6 +1340,21 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       ['pointerdown', 'mousedown', 'touchstart'].forEach((evt) => {
         el.addEventListener(evt, () => {
           if (driveMode === 'merged') {
+            mergedDragActive = true;
+          }
+        }, { passive: true });
+      });
+
+      el.addEventListener('input', () => {
+        motorDirty = true;
+        updateReadouts();
+      });
+    });
+
+    [tank.left, tank.right].forEach((el) => {
+      ['pointerdown', 'mousedown', 'touchstart'].forEach((evt) => {
+        el.addEventListener(evt, () => {
+          if (driveMode === 'tank') {
             mergedDragActive = true;
           }
         }, { passive: true });
@@ -1126,6 +1381,19 @@ static const char CAMERA_APP_HTML[] = R"HTML(
       });
     });
 
+    fields.preview_height.addEventListener('input', () => {
+      applyPreviewHeight(fields.preview_height.value);
+      localStorage.setItem('rc_preview_height', fields.preview_height.value);
+      updateReadouts();
+    });
+
+    previewHeightResetBtn.addEventListener('click', () => {
+      fields.preview_height.value = String(DEFAULT_PREVIEW_HEIGHT);
+      applyPreviewHeight(DEFAULT_PREVIEW_HEIGHT);
+      localStorage.setItem('rc_preview_height', String(DEFAULT_PREVIEW_HEIGHT));
+      updateReadouts();
+    });
+
     ['awb', 'agc', 'aec', 'vflip', 'hmirror', 'colorbar'].forEach((k) => {
       fields[k].addEventListener('change', () => {
         sendControl(k, fields[k].checked ? 1 : 0).catch(() => {});
@@ -1150,6 +1418,13 @@ static const char CAMERA_APP_HTML[] = R"HTML(
     });
 
     loadStatus();
+    const savedPreviewHeight = localStorage.getItem('rc_preview_height');
+    if (savedPreviewHeight) {
+      fields.preview_height.value = String(clamp(Number(savedPreviewHeight), 200, 700));
+    } else {
+      fields.preview_height.value = String(DEFAULT_PREVIEW_HEIGHT);
+    }
+    applyPreviewHeight(fields.preview_height.value);
     setDriveMode('merged');
     updateMobileScrollLock();
     updateReadouts();
