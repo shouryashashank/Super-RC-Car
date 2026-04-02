@@ -20,6 +20,8 @@
 #include "sdkconfig.h"
 #include "board_config.h"
 #include "camera_ui.h"
+#include "motor_control.h"
+#include <WiFi.h>
 
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
@@ -316,6 +318,147 @@ static esp_err_t parse_get(httpd_req_t *req, char **obuf) {
   }
   httpd_resp_send_404(req);
   return ESP_FAIL;
+}
+
+static bool extract_json_int(const char *body, const char *key, int *out, bool required) {
+  char pattern[24];
+  snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+  const char *match = strstr(body, pattern);
+  if (!match) {
+    return !required;
+  }
+
+  const char *colon = strchr(match, ':');
+  if (!colon) {
+    return false;
+  }
+
+  char *endPtr = NULL;
+  long value = strtol(colon + 1, &endPtr, 10);
+  if (endPtr == colon + 1) {
+    return false;
+  }
+
+  *out = static_cast<int>(value);
+  return true;
+}
+
+static esp_err_t api_health_handler(httpd_req_t *req) {
+  char json[320];
+  IPAddress ip = WiFi.localIP();
+
+  snprintf(
+    json,
+    sizeof(json),
+    "{\"ok\":true,\"uptime_ms\":%lu,\"wifi_rssi\":%d,\"ip\":\"%u.%u.%u.%u\",\"stream\":\"http://%u.%u.%u.%u:81/stream\",\"motor_ready\":%s,\"watchdog_ms\":%lu,\"last_seq\":%lu,\"last_cmd_age_ms\":%lu,\"fw\":\"v0.1.0\"}",
+    millis(),
+    WiFi.RSSI(),
+    ip[0],
+    ip[1],
+    ip[2],
+    ip[3],
+    ip[0],
+    ip[1],
+    ip[2],
+    ip[3],
+    motorControlIsReady() ? "true" : "false",
+    motorControlGetWatchdogMs(),
+    motorControlGetLastSeq(),
+    motorControlGetLastCommandAgeMs()
+  );
+
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, json, strlen(json));
+}
+
+static esp_err_t api_stop_handler(httpd_req_t *req) {
+  if (!motorControlIsReady()) {
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    return httpd_resp_send(req, "{\"ok\":false,\"error\":\"motor_hw_not_ready\"}", HTTPD_RESP_USE_STRLEN);
+  }
+
+  motorControlStopAll();
+
+  const char *json = "{\"ok\":true,\"stopped\":true}";
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, json, strlen(json));
+}
+
+static esp_err_t api_motors_handler(httpd_req_t *req) {
+  if (!motorControlIsReady()) {
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    return httpd_resp_send(req, "{\"ok\":false,\"error\":\"motor_hw_not_ready\"}", HTTPD_RESP_USE_STRLEN);
+  }
+
+  if (req->content_len <= 0 || req->content_len > 256) {
+    httpd_resp_set_status(req, "400 Bad Request");
+    return httpd_resp_send(req, "Invalid body length", HTTPD_RESP_USE_STRLEN);
+  }
+
+  char body[257] = {0};
+  size_t totalRead = 0;
+  while (totalRead < req->content_len) {
+    int readNow = httpd_req_recv(req, body + totalRead, req->content_len - totalRead);
+    if (readNow <= 0) {
+      httpd_resp_set_status(req, "400 Bad Request");
+      return httpd_resp_send(req, "Failed to read body", HTTPD_RESP_USE_STRLEN);
+    }
+    totalRead += static_cast<size_t>(readNow);
+  }
+  body[totalRead] = '\0';
+
+  int fl = 0;
+  int fr = 0;
+  int rl = 0;
+  int rr = 0;
+  int seq = 0;
+  int ttlMs = MOTOR_WATCHDOG_DEFAULT_MS;
+
+  if (!extract_json_int(body, "fl", &fl, true) || !extract_json_int(body, "fr", &fr, true) || !extract_json_int(body, "rl", &rl, true)
+      || !extract_json_int(body, "rr", &rr, true) || !extract_json_int(body, "seq", &seq, false)
+      || !extract_json_int(body, "ttl_ms", &ttlMs, false)) {
+    httpd_resp_set_status(req, "400 Bad Request");
+    httpd_resp_set_type(req, "application/json");
+    return httpd_resp_send(req, "{\"ok\":false,\"error\":\"invalid_json\"}", HTTPD_RESP_USE_STRLEN);
+  }
+
+  uint32_t appliedWatchdogMs = MOTOR_WATCHDOG_DEFAULT_MS;
+  MotorApplyResult result = motorControlApplyCommand(
+    fl,
+    fr,
+    rl,
+    rr,
+    static_cast<uint32_t>(seq),
+    static_cast<uint32_t>(ttlMs),
+    seq > 0,
+    &appliedWatchdogMs
+  );
+
+  if (result == MOTOR_APPLY_OUT_OF_ORDER) {
+    httpd_resp_set_status(req, "409 Conflict");
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    return httpd_resp_send(req, "{\"ok\":false,\"error\":\"out_of_order_seq\"}", HTTPD_RESP_USE_STRLEN);
+  }
+
+  if (result != MOTOR_APPLY_OK) {
+    httpd_resp_set_status(req, "500 Internal Server Error");
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    return httpd_resp_send(req, "{\"ok\":false,\"error\":\"motor_apply_failed\"}", HTTPD_RESP_USE_STRLEN);
+  }
+
+  char resp[128];
+  snprintf(resp, sizeof(resp), "{\"ok\":true,\"applied_seq\":%lu,\"watchdog_ms\":%lu}", motorControlGetLastSeq(), appliedWatchdogMs);
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, resp, strlen(resp));
 }
 
 static esp_err_t cmd_handler(httpd_req_t *req) {
@@ -656,7 +799,7 @@ static esp_err_t index_handler(httpd_req_t *req) {
 
 void startCameraServer() {
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  config.max_uri_handlers = 16;
+  config.max_uri_handlers = 20;
 
   httpd_uri_t index_uri = {
     .uri = "/",
@@ -801,6 +944,45 @@ void startCameraServer() {
 #endif
   };
 
+  httpd_uri_t api_health_uri = {
+    .uri = "/api/v1/health",
+    .method = HTTP_GET,
+    .handler = api_health_handler,
+    .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    ,
+    .is_websocket = true,
+    .handle_ws_control_frames = false,
+    .supported_subprotocol = NULL
+#endif
+  };
+
+  httpd_uri_t api_motors_uri = {
+    .uri = "/api/v1/motors",
+    .method = HTTP_POST,
+    .handler = api_motors_handler,
+    .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    ,
+    .is_websocket = true,
+    .handle_ws_control_frames = false,
+    .supported_subprotocol = NULL
+#endif
+  };
+
+  httpd_uri_t api_stop_uri = {
+    .uri = "/api/v1/stop",
+    .method = HTTP_POST,
+    .handler = api_stop_handler,
+    .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    ,
+    .is_websocket = true,
+    .handle_ws_control_frames = false,
+    .supported_subprotocol = NULL
+#endif
+  };
+
   ra_filter_init(&ra_filter, 20);
 
   log_i("Starting web server on port: '%d'", config.server_port);
@@ -816,6 +998,9 @@ void startCameraServer() {
     httpd_register_uri_handler(camera_httpd, &greg_uri);
     httpd_register_uri_handler(camera_httpd, &pll_uri);
     httpd_register_uri_handler(camera_httpd, &win_uri);
+    httpd_register_uri_handler(camera_httpd, &api_health_uri);
+    httpd_register_uri_handler(camera_httpd, &api_motors_uri);
+    httpd_register_uri_handler(camera_httpd, &api_stop_uri);
   }
 
   config.server_port += 1;

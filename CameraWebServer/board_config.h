@@ -14,4 +14,11 @@
 #define CAMERA_MODEL_AI_THINKER // Has PSRAM
 #include "camera_pins.h"
 
+// Motor control configuration (PCA9685 + 2x MX1508 for 4 motors)
+#define MOTOR_I2C_SDA_PIN 14
+#define MOTOR_I2C_SCL_PIN 15
+#define MOTOR_PWM_FREQ_HZ 1000
+#define MOTOR_WATCHDOG_DEFAULT_MS 300
+#define MOTOR_WATCHDOG_MAX_MS 2000
+
 #endif  // BOARD_CONFIG_H

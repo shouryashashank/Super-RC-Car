@@ -1,6 +1,7 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include "esp32-hal-ledc.h"
+#include "motor_control.h"
 
 // ===========================
 // Select camera model in board_config.h
@@ -124,6 +125,12 @@ void setup() {
   Serial.println("");
   Serial.println("WiFi connected");
 
+  if (!motorControlInit()) {
+    Serial.println("WARNING: Motor controller not detected (PCA9685). Camera/API will run, motor endpoints disabled until hardware is connected.");
+  } else {
+    Serial.println("Motor control ready");
+  }
+
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
@@ -136,6 +143,6 @@ void setup() {
 }
 
 void loop() {
-  // Do nothing. Everything is done in another task by the web server
-  delay(10000);
+  motorControlServiceWatchdog();
+  delay(10);
 }
