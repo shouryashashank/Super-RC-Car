@@ -1,5 +1,6 @@
 #include "esp_camera.h"
 #include <WiFi.h>
+#include "esp32-hal-ledc.h"
 
 // ===========================
 // Select camera model in board_config.h
@@ -14,6 +15,26 @@ const char *password = "zxcvbnm12345";
 
 void startCameraServer();
 void setupLedFlash();
+#if defined(LED_GPIO_NUM)
+void flashLedByIpLastDigit();
+#endif
+
+#if defined(LED_GPIO_NUM)
+void flashLedByIpLastDigit() {
+  uint8_t flashes = WiFi.localIP()[3] % 10;
+  if (flashes == 0) {
+    Serial.println("IP last digit is 0, skipping LED flashes");
+    return;
+  }
+
+  for (uint8_t i = 0; i < flashes; i++) {
+    ledcWrite(LED_GPIO_NUM, 10);
+    delay(180);
+    ledcWrite(LED_GPIO_NUM, 0);
+    delay(180);
+  }
+}
+#endif
 
 void setup() {
   Serial.begin(115200);
@@ -108,6 +129,10 @@ void setup() {
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
+
+#if defined(LED_GPIO_NUM)
+  flashLedByIpLastDigit();
+#endif
 }
 
 void loop() {
