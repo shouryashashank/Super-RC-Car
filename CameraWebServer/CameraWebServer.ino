@@ -12,7 +12,7 @@
 // Enter your WiFi credentials
 // ===========================
 const char *ssid = "LAN SOLO";
-const char *password = "zxcvbnm12345";
+const char *password = "";
 
 void startCameraServer();
 void setupLedFlash();
